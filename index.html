@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Promo Studio</title>
+
+<style>
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+section {
+  padding: 16px;
+  border-bottom: 1px solid #222;
+}
+button {
+  padding: 10px 16px;
+  margin: 6px 0;
+  background: #fff;
+  color: #000;
+  border: none;
+  cursor: pointer;
+}
+#stage {
+  position: relative;
+  width: 100%;
+  height: 70vh;
+  background: #111;
+  overflow: hidden;
+}
+.frame {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  animation: motion 10s infinite ease-in-out;
+}
+
+@keyframes motion {
+  0% { opacity: 0; transform: scale(1); }
+  10% { opacity: 1; }
+  70% { transform: scale(1.18) translateX(-4%); }
+  90% { opacity: 0; }
+}
+
+textarea {
+  width: 100%;
+  height: 100px;
+}
+
+.drop {
+  border: 2px dashed #444;
+  padding: 20px;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<section>
+<h2>1️⃣ Upload Reference Video (optional)</h2>
+<input type="file" accept="video/*" id="videoInput">
+<video id="refVideo" controls width="100%"></video>
+<p id="styleText"></p>
+</section>
+
+<section>
+<h2>2️⃣ Upload Product Images</h2>
+<div class="drop" id="dropZone">Drag & Drop Images Here or Click Below</div>
+<input type="file" id="imageInput" accept="image/*" multiple>
+<div id="stage"></div>
+</section>
+
+<section>
+<h2>3️⃣ Upload Music</h2>
+<input type="file" accept="audio/*" id="musicInput">
+<audio id="music" controls></audio>
+</section>
+
+<section>
+<h2>4️⃣ Generated Text-to-Video Prompt</h2>
+<textarea id="promptBox"></textarea>
+</section>
+
+<section>
+<button onclick="toggleOrientation()">Toggle Vertical / Horizontal</button>
+<button onclick="startRecording()">Download Video</button>
+</section>
+
+<script>
+const stage = document.getElementById("stage");
+const promptBox = document.getElementById("promptBox");
+const styleText = document.getElementById("styleText");
+let vertical = false;
+
+// VIDEO STYLE DETECTION
+document.getElementById("videoInput").onchange = e => {
+  const file = e.target.files[0];
+  const v = document.getElementById("refVideo");
+  v.src = URL.createObjectURL(file);
+
+  v.onloadedmetadata = () => {
+    const style =
+      v.duration < 8 ? "Fast-paced TikTok promo"
+      : "Cinematic luxury brand ad";
+
+    styleText.innerText = "Detected style: " + style;
+
+    promptBox.value =
+`Luxury fashion promotional video, cinematic camera motion, smooth transitions,
+editorial photoshoot style, clean background, premium lighting, high-end brand feel.`;
+  };
+};
+
+// IMAGE UPLOAD
+function handleImages(files) {
+  stage.innerHTML = "";
+  [...files].forEach((file, i) => {
+    const div = document.createElement("div");
+    div.className = "frame";
+    div.style.backgroundImage = `url(${URL.createObjectURL(file)})`;
+    div.style.animationDelay = `${i * 4}s`;
+    stage.appendChild(div);
+  });
+}
+
+document.getElementById("imageInput").onchange = e =>
+  handleImages(e.target.files);
+
+// DRAG & DROP
+const drop = document.getElementById("dropZone");
+drop.ondragover = e => { e.preventDefault(); };
+drop.ondrop = e => {
+  e.preventDefault();
+  handleImages(e.dataTransfer.files);
+};
+
+// MUSIC
+document.getElementById("musicInput").onchange = e => {
+  const audio = document.getElementById("music");
+  audio.src = URL.createObjectURL(e.target.files[0]);
+  audio.play();
+};
+
+// ORIENTATION
+function toggleOrientation() {
+  vertical = !vertical;
+  stage.style.height = vertical ? "90vh" : "70vh";
+  stage.style.width = vertical ? "56vh" : "100%";
+}
+
+// RECORD VIDEO (SCREEN CAPTURE)
+let recorder;
+function startRecording() {
+  const stream = stage.captureStream(30);
+  recorder = new MediaRecorder(stream);
+  let chunks = [];
+
+  recorder.ondataavailable = e => chunks.push(e.data);
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: "video/webm" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "promo-video.webm";
+    a.click();
+  };
+
+  recorder.start();
+  setTimeout(() => recorder.stop(), 12000);
+}
+</script>
+
+</body>
+  </html>
